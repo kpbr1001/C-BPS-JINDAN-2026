@@ -1,0 +1,12 @@
+# netlify.toml — 배포 설정
+# 정적 HTML + 서버리스 함수 구성
+
+[build]
+  # 정적 사이트라 빌드 명령 불필요
+  publish = "."
+  functions = "netlify/functions"
+
+# 함수 응답을 스트리밍으로 (긴 진단 응답의 타임아웃 회피)
+[functions]
+  # Node 런타임 사용
+  node_bundler = "esbuild"
