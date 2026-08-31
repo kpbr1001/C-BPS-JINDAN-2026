@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사업계획서 정합성 심사 · Beconic</title>
+<style>
+  :root{
+    --blue:#3182f6; --blue-dark:#1b64da; --blue-light:#e8f2ff; --blue-bg:#f4f8ff;
+    --ink:#0f172a;
+    --pass:#0d9488; --pass-dark:#0f766e; --pass-bg:#f0fdfa; --pass-line:#99f6e4;
+    --warn:#d97706; --warn-bg:#fffbeb; --warn-line:#fde68a; --warn-dark:#92400e;
+    --fail:#dc2626; --fail-dark:#991b1b; --fail-bg:#fef2f2; --fail-line:#fecaca;
+    --gray-50:#f8fafc; --gray-100:#f1f5f9; --gray-200:#e2e8f0; --gray-300:#cbd5e1;
+    --gray-400:#94a3b8; --gray-500:#64748b; --gray-600:#475569; --gray-700:#334155; --gray-800:#1e293b; --gray-900:#0f172a;
+    --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 28px rgba(15,23,42,.07);
+    --font:'Pretendard','Apple SD Gothic Neo',-apple-system,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:#eef1f5;color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:800px;margin:0 auto;padding:24px 16px 90px;}
+  .kicker{text-align:center;margin-bottom:14px;}
+  .kicker .role{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--gray-700);background:#fff;border:1px solid var(--gray-200);padding:6px 14px;border-radius:999px;}
+  h1.title{text-align:center;font-size:22px;font-weight:900;letter-spacing:-.03em;margin-bottom:6px;line-height:1.3;}
+  .subtitle{text-align:center;font-size:13px;color:var(--gray-600);margin-bottom:14px;}
+  .role-note{background:var(--blue-bg);border:1px solid #cfe3ff;border-radius:12px;padding:12px 15px;margin-bottom:22px;font-size:12.5px;color:var(--gray-700);line-height:1.6;display:flex;gap:9px;align-items:flex-start;}
+  .role-note b{color:var(--blue-dark);}
+  .input-card{background:#fff;border:1px solid var(--gray-200);border-radius:18px;padding:22px;box-shadow:var(--shadow);margin-bottom:20px;}
+  .field{margin-bottom:16px;} .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-size:12.5px;font-weight:800;color:var(--gray-800);margin-bottom:7px;}
+  .field label .opt{font-weight:600;color:var(--gray-400);font-size:11px;}
+  .field textarea,.field input{width:100%;border:1px solid var(--gray-300);border-radius:10px;padding:11px 13px;font-size:13px;font-family:inherit;color:var(--gray-900);resize:vertical;}
+  .field textarea:focus,.field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-light);}
+  .field textarea{min-height:130px;line-height:1.6;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .run-btn{width:100%;background:var(--pass);color:#fff;font-size:15px;font-weight:800;padding:15px;border-radius:12px;border:none;cursor:pointer;margin-top:6px;transition:background .15s;}
+  .run-btn:hover{background:var(--pass-dark);} .run-btn:disabled{background:var(--gray-300);cursor:not-allowed;}
+  .loading{display:none;text-align:center;padding:40px 20px;} .loading.show{display:block;}
+  .spinner{width:38px;height:38px;border:4px solid var(--gray-200);border-top-color:var(--pass);border-radius:50%;margin:0 auto 16px;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{font-size:13px;color:var(--gray-600);}
+  .err-box{display:none;background:var(--fail-bg);border:1px solid var(--fail-line);border-radius:12px;padding:16px;font-size:13px;color:var(--fail-dark);line-height:1.6;white-space:pre-wrap;margin-bottom:20px;} .err-box.show{display:block;}
+  .result{display:none;} .result.show{display:block;}
+  .verdict{background:#fff;border:1px solid var(--gray-200);border-radius:20px;padding:28px 26px;margin-bottom:20px;box-shadow:var(--shadow);text-align:center;position:relative;overflow:hidden;}
+  .verdict::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:linear-gradient(90deg,var(--warn),#f59e0b);}
+  .verdict.hi::before{background:linear-gradient(90deg,var(--pass),#14b8a6);}
+  .verdict.lo::before{background:linear-gradient(90deg,var(--fail),#ef4444);}
+  .verdict .vlabel{font-size:12.5px;font-weight:800;color:var(--gray-500);margin-bottom:16px;}
+  .gauge-ring{width:170px;height:170px;margin:0 auto 6px;position:relative;}
+  .gauge-ring svg{transform:rotate(-90deg);width:100%;height:100%;}
+  .gauge-ring .gv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .gauge-ring .gv .pct{font-size:42px;font-weight:900;line-height:1;letter-spacing:-.03em;}
+  .gauge-ring .gv .st{font-size:12.5px;font-weight:800;margin-top:4px;padding:3px 12px;border-radius:999px;}
+  .verdict .vsum{font-size:14px;color:var(--gray-700);line-height:1.6;max-width:470px;margin:12px auto 0;}
+  .verdict .vtop{margin-top:16px;border-radius:12px;padding:13px 16px;font-size:13px;line-height:1.55;text-align:left;display:flex;gap:10px;align-items:flex-start;background:var(--fail-bg);border:1px solid var(--fail-line);color:var(--fail-dark);}
+  .verdict .vtop b{font-weight:800;}
+  .sec-title{font-size:13px;font-weight:800;color:var(--gray-800);margin:0 2px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .sec-title .badge-new{font-size:10.5px;font-weight:800;color:var(--pass-dark);background:var(--pass-bg);border:1px solid var(--pass-line);padding:2px 8px;border-radius:6px;}
+  .card{background:#fff;border:1px solid var(--gray-200);border-radius:16px;box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden;}
+  .consist-head{padding:16px 20px;background:linear-gradient(135deg,#fff,var(--fail-bg));border-bottom:1px solid var(--gray-100);}
+  .consist-head .ch-t{font-size:14px;font-weight:800;color:var(--gray-900);margin-bottom:3px;}
+  .consist-head .ch-d{font-size:12px;color:var(--gray-600);line-height:1.5;}
+  .consist-sub{padding:14px 20px 6px;font-size:11.5px;font-weight:800;color:var(--gray-500);}
+  .cmatch{padding:12px 20px;border-bottom:1px solid var(--gray-100);display:flex;gap:12px;align-items:flex-start;}
+  .cmatch:last-child{border-bottom:none;}
+  .cm-ico{width:24px;height:24px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-top:1px;}
+  .cm-ico.ok{background:var(--pass-bg);color:var(--pass-dark);} .cm-ico.no{background:var(--fail-bg);color:var(--fail-dark);} .cm-ico.unknown{background:var(--gray-100);color:var(--gray-500);}
+  .cm-body{flex:1;min-width:0;} .cm-title{font-size:13px;font-weight:700;color:var(--gray-900);margin-bottom:6px;}
+  .clash{display:grid;grid-template-columns:1fr auto 1fr;border:1px solid var(--fail-line);border-radius:10px;overflow:hidden;margin-top:4px;}
+  .clash-side{padding:10px 12px;background:var(--gray-50);min-width:0;} .clash-side.right{background:var(--fail-bg);}
+  .clash-side .cs-where{font-size:10.5px;font-weight:700;color:var(--gray-500);margin-bottom:3px;word-break:break-all;}
+  .clash-side .cs-val{font-size:15px;font-weight:900;color:var(--gray-800);word-break:break-all;} .clash-side.right .cs-val{color:var(--fail-dark);}
+  .clash-mid{display:flex;align-items:center;justify-content:center;background:#fff;padding:0 10px;font-size:15px;color:var(--fail);font-weight:800;}
+  .clash-gap{font-size:11.5px;color:var(--fail-dark);font-weight:700;margin-top:7px;background:var(--fail-bg);padding:6px 10px;border-radius:7px;display:inline-block;line-height:1.4;}
+  .cm-ok-note{font-size:12px;color:var(--gray-500);line-height:1.5;word-break:keep-all;}
+  .consist-foot{padding:13px 20px;background:var(--warn-bg);font-size:12px;color:var(--warn-dark);line-height:1.55;font-weight:600;}
+  .consist-foot b{color:#78350f;}
+  .gate-row{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--gray-100);}
+  .gate-row:last-child{border-bottom:none;}
+  .gate-ico{width:26px;height:26px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;}
+  .gate-ico.ok{background:var(--pass-bg);color:var(--pass-dark);} .gate-ico.no{background:var(--fail-bg);color:var(--fail-dark);} .gate-ico.unknown{background:var(--gray-100);color:var(--gray-500);}
+  .gate-body{flex:1;min-width:0;} .gate-body .gt{font-size:13.5px;font-weight:700;color:var(--gray-900);} .gate-body .gd{font-size:12px;color:var(--gray-500);margin-top:2px;line-height:1.4;}
+  .gate-tag{font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;flex-shrink:0;}
+  .gate-tag.ok{background:var(--pass-bg);color:var(--pass-dark);} .gate-tag.no{background:var(--fail-bg);color:var(--fail-dark);} .gate-tag.unknown{background:var(--gray-100);color:var(--gray-500);}
+  .gate-warn{padding:11px 18px;background:var(--fail-bg);font-size:12px;color:var(--fail-dark);line-height:1.5;font-weight:600;}
+  .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
+  .act-btn{font-size:13.5px;font-weight:800;padding:12px 22px;border-radius:11px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .act-btn.pdf{background:var(--gray-900);color:#fff;} .act-btn.retry{background:#fff;border:1px solid var(--gray-300);color:var(--gray-700);}
+  .disclaimer{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:12px;padding:13px 16px;margin-top:8px;font-size:11.5px;color:var(--warn-dark);line-height:1.6;}
+  .disclaimer b{color:#78350f;}
+  .foot{text-align:center;padding:22px 0 0;font-size:11px;color:var(--gray-400);line-height:1.7;}
+  .foot b{color:var(--gray-500);}
+  @media(max-width:640px){
+    .wrap{padding:18px 12px 70px;}
+    h1.title{font-size:19px;}
+    .grid3{grid-template-columns:1fr;}
+    .gauge-ring{width:150px;height:150px;}
+    .gauge-ring .gv .pct{font-size:36px;}
+    .clash{grid-template-columns:1fr;}
+    .clash-mid{padding:6px;border-top:1px solid var(--fail-line);border-bottom:1px solid var(--fail-line);}
+    .verdict{padding:22px 18px;}
+    .input-card{padding:18px;}
+    .cmatch,.gate-row{padding-left:14px;padding-right:14px;}
+  }
+  @media print{
+    @page{ size:A4; margin:14mm; }
+    body{background:#fff;}
+    .wrap{max-width:100%;padding:0;}
+    .input-card,.loading,.err-box,.actions,.role-note,.kicker{display:none !important;}
+    .card,.verdict{box-shadow:none;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid;}
+    .verdict::before,.card{ -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .sec-title{break-after:avoid;}
+    .cmatch{break-inside:avoid;}
+    .disclaimer,.foot{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker"><span class="role">🔗 사업계획서 정합성 심사 · 심사위원 시점</span></div>
+  <h1 class="title">요약과 본문, 재무표의 숫자가<br>서로 맞습니까?</h1>
+  <p class="subtitle">심사위원이 서류를 대조하듯, 문서 곳곳의 수치·주장이 어긋나는 곳을 찾아냅니다.</p>
+  <div class="role-note">
+    <span>💡</span>
+    <div><b>AI 진단(점수·리스크·수정예시)과 다릅니다.</b> 진단은 문장을 항목별로 봅니다. 여기서는 진단이 볼 수 없는 <b>문서 전체의 내부 정합성</b> — 요약·본문·재무표·기업정보의 숫자가 서로 어긋나는지를 교차 대조합니다. <b>수치 불일치는 1차 탈락의 숨은 원인</b>입니다.</div>
+  </div>
+  <div class="input-card" id="inputCard">
+    <div class="field">
+      <label>사업계획서 본문 <span class="opt">(필수 · 요약·본문·재무표·조직도가 모두 포함될수록 정확)</span></label>
+      <textarea id="planText" placeholder="사업계획서 전문을 붙여넣으세요. 요약(사업 개요)과 재무표·조직도가 함께 들어갈수록 수치 대조가 정확해집니다."></textarea>
+    </div>
+    <div class="field">
+      <label>지원 공고 요약 <span class="opt">(선택 · 양식·키워드 대조용)</span></label>
+      <textarea id="noticeText" placeholder="공고의 양식 요건·필수 첨부·핵심 키워드를 붙여넣으면 형식 게이트와 키워드 정합성을 함께 봅니다." style="min-height:66px"></textarea>
+    </div>
+    <div class="field">
+      <label>기업정보 <span class="opt">(선택 · 계획서 본문 수치와 교차 대조)</span></label>
+      <div class="grid3">
+        <input id="cMuchul" placeholder="매출(원) 예: 43,800,000">
+        <input id="cGoyong" placeholder="고용(명) 예: 5">
+        <input id="cSuchul" placeholder="수출(원) 예: 10,000,000">
+      </div>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runScreening()">🔍 정합성 심사 시작</button>
+  </div>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">문서 곳곳의 숫자를 대조하는 중입니다…</div>
+  </div>
+  <div class="err-box" id="errBox"></div>
+  <div class="result" id="result"></div>
+  <div class="foot">
+    <b>그로스벤처스(주) · Beconic</b> · 중기부 인증 중소기업상담회사 제2025-684호<br>
+    문의 070-4103-4177 · 참고용 자가진단 도구 · 최종 판단과 책임은 제출자에게 있습니다
+  </div>
+</div>
+<script>
+const API_PROXY_URL = '/.netlify/functions/screening';
+const MODEL = 'claude-sonnet-4-6';
+const esc = (s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const g = (obj,path,def)=>{ try{ const v=path.split('.').reduce((o,k)=>(o==null?undefined:o[k]),obj); return (v==null?def:v); }catch(_){ return def; } };
+
+function buildPrompt(plan, notice, company){
+  return '당신은 정부지원사업 서면평가를 수백 건 심사한 평가위원입니다. 아래 사업계획서의 "내부 정합성"만 집중 검토하세요. 문서 곳곳의 숫자·주장이 서로 어긋나는지를 교차 대조하는 것이 임무입니다. (점수 매기기·문장 첨삭은 다른 도구가 담당하니 하지 마세요.)\n\n'
+  + '# 절대 원칙\n- 계획서에 실재하는 내용·수치만 근거로 사용하세요. 없는 것을 지어내지 마세요.\n- 서로 다른 위치(요약/본문/재무표/조직도/기업정보)의 같은 항목 수치를 대조해 어긋남을 찾으세요.\n- 어긋남이 없으면 정직하게 "일치"로 표시하세요. 억지로 문제를 만들지 마세요.\n\n'
+  + '# 입력\n## 사업계획서 본문\n' + plan + '\n\n## 지원 공고 요약\n' + (notice || '(미제공 — 양식·키워드 정합성은 근거 부족으로 unknown 처리)') + '\n\n'
+  + '## 기업정보(사용자 입력값 — 계획서 본문 수치와 반드시 대조)\n- 매출: ' + (company.muchul||'미입력') + '\n- 고용: ' + (company.goyong||'미입력') + '\n- 수출: ' + (company.suchul||'미입력') + '\n\n'
+  + '# 출력 형식 (반드시 아래 JSON만 출력. 마크다운·코드펜스·설명 금지)\n'
+  + '{\n'
+  + '  "consistencyScore": <0~100 정수. 문서 내부 정합성 점수. 어긋남이 많을수록 낮음>,\n'
+  + '  "verdictLabel": "<정합성 양호|부분 불일치|불일치 다수> 중 하나",\n'
+  + '  "summary": "<2~3문장. 정합성 상태와 심사 시 위험>",\n'
+  + '  "topIssue": "<가장 위험한 불일치 1가지. 없으면 빈 문자열>",\n'
+  + '  "identity": {"status":"<ok|no>","note":"<요약 아이템과 본문 사업내용이 같은 방향인가>"},\n'
+  + '  "numbers": [ {"label":"<무엇의 수치>","status":"<ok|no>","left":{"where":"<위치>","val":"<값>"},"right":{"where":"<위치>","val":"<값>"},"gap":"<차이와 위험. ok면 빈 문자열>"} ],\n'
+  + '  "claims": [ {"label":"<주장 간 모순>","status":"<ok|no>","note":"<어디와 어디가 모순인가>"} ],\n'
+  + '  "formGate": [ {"item":"지정 양식 사용","status":"<ok|no|unknown>","detail":"<근거. 공고 미제공 시 unknown>"}, {"item":"분량 준수","status":"<ok|no|unknown>","detail":"<근거>"}, {"item":"필수 첨부·필수 항목","status":"<ok|no|unknown>","detail":"<근거>"} ],\n'
+  + '  "keyword": {"status":"<ok|no|unknown>","note":"<공고 키워드를 아이템으로 내세웠는데 본문 근거가 있는가. 공고 없으면 unknown>"},\n'
+  + '  "fixOrder": ["<바로잡을 순서. 어긋난 것부터. 각 항목 한 줄>"]\n'
+  + '}\n\n'
+  + '# 주의\n- numbers·claims는 실제 대조 가능한 것만. 어긋남 없으면 status:"ok".\n- 점수(scoreTable)·목적적합성 점수·문장 첨삭·수정예시는 출력 금지. 정합성만.\n- fixOrder는 효과·긴급도 순 3~5개.';
+}
+
+function parseLenientJSON(text){
+  if(!text) return null;
+  let t = String(text).trim();
+  t = t.replace(/^```(json)?/i,'').replace(/```$/,'').trim();
+  const s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if(s>=0 && e>s) t = t.slice(s, e+1);
+  try{ return JSON.parse(t); }catch(_){}
+  try{ return JSON.parse(t.replace(/,\s*([}\]])/g,'$1')); }catch(_){}
+  return null;
+}
+
+async function callAI(prompt, onProgress){
+  const body = { model: MODEL, max_tokens: 6000, messages:[{role:'user',content:prompt}] };
+  const res = await fetch(API_PROXY_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if(!res.ok){
+    const raw = await res.text();
+    let detail=''; try{ const ej=JSON.parse(raw); detail=(ej.error&&(ej.error.message||ej.error))||ej.message||raw; }catch(_){ detail=raw; }
+    const hint = ({
+      401:'API 키가 잘못되었거나 만료되었습니다. Netlify 환경변수 ANTHROPIC_API_KEY 를 확인하세요.',
+      402:'크레딧이 부족합니다. Anthropic 콘솔에서 결제수단·크레딧을 확인하세요.',
+      429:'요청이 많아 일시적으로 제한되었습니다. 잠시 후 다시 시도하세요.',
+      500:'서버 함수 오류입니다. Netlify에 ANTHROPIC_API_KEY 설정 후 재배포했는지 확인하세요.',
+      502:'AI 서버 연결 실패입니다. 잠시 후 다시 시도하세요.',
+      504:'응답 지연으로 시간 초과되었습니다. 잠시 후 다시 시도하세요.'
+    })[res.status] || '알 수 없는 오류입니다.';
+    throw new Error('['+res.status+'] '+hint+'\n\n서버 응답: '+String(detail).slice(0,300));
+  }
+  let textOut = '';
+  const ctype = res.headers.get('Content-Type')||'';
+  if(res.body && ctype.includes('event-stream')){
+    const reader = res.body.getReader(); const decoder = new TextDecoder(); let buf='';
+    while(true){
+      const rd = await reader.read(); if(rd.done) break;
+      buf += decoder.decode(rd.value,{stream:true});
+      const lines = buf.split('\n'); buf = lines.pop();
+      for(const line of lines){
+        const s2 = line.trim(); if(!s2.startsWith('data:')) continue;
+        const j = s2.slice(5).trim(); if(!j || j==='[DONE]') continue;
+        try{ const evt = JSON.parse(j);
+          if(evt.type==='content_block_delta' && evt.delta && evt.delta.text){ textOut += evt.delta.text; if(onProgress) onProgress(textOut.length); }
+        }catch(_){}
+      }
+    }
+  }else{
+    const data = await res.json(); textOut = (g(data,'content',[])||[]).map(c=>c.text||'').join('');
+  }
+  return textOut;
+}
+
+async function runScreening(){
+  const plan = document.getElementById('planText').value.trim();
+  if(plan.length < 50){ alert('사업계획서 본문을 충분히 붙여넣어 주세요 (최소 50자).'); return; }
+  const notice = document.getElementById('noticeText').value.trim();
+  const company = {
+    muchul: document.getElementById('cMuchul').value.trim(),
+    goyong: document.getElementById('cGoyong').value.trim(),
+    suchul: document.getElementById('cSuchul').value.trim(),
+  };
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('inputCard').style.display='none';
+  document.getElementById('errBox').classList.remove('show');
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('loading').classList.add('show');
+  try{
+    const raw = await callAI(buildPrompt(plan, notice, company), function(n){
+      document.getElementById('loadingText').textContent = 'AI가 정합성 심사 결과를 작성 중입니다… ('+n.toLocaleString()+'자)';
+    });
+    const data = parseLenientJSON(raw);
+    if(!data || data.consistencyScore==null){
+      throw new Error('AI 응답을 해석하지 못했습니다. 다시 시도해 주세요.\n\n원문 일부: '+String(raw).slice(0,200));
+    }
+    renderResult(data);
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('result').classList.add('show');
+  }catch(e){
+    document.getElementById('loading').classList.remove('show');
+    const eb = document.getElementById('errBox');
+    eb.textContent = '⚠️ ' + String((e&&e.message)||e);
+    eb.classList.add('show');
+    document.getElementById('inputCard').style.display='block';
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+function renderResult(d){
+  const pct = Math.max(0, Math.min(100, parseInt(g(d,'consistencyScore',0),10)||0));
+  const isHi = pct>=80, isLo = pct<55;
+  const tone = isHi?'hi':(isLo?'lo':'');
+  const toneColor = isHi?'#0d9488':(isLo?'#dc2626':'#f59e0b');
+  const toneDark = isHi?'#0f766e':(isLo?'#991b1b':'#92400e');
+  const toneBg = isHi?'#f0fdfa':(isLo?'#fef2f2':'#fffbeb');
+  const circ=490, off=circ-(circ*pct/100);
+  let h='';
+  h += '<div class="verdict '+tone+'">'
+    + '<div class="vlabel">문서 내부 정합성 점수</div>'
+    + '<div class="gauge-ring"><svg viewBox="0 0 180 180" preserveAspectRatio="xMidYMid meet">'
+    + '<circle cx="90" cy="90" r="78" fill="none" stroke="#f1f5f9" stroke-width="16"/>'
+    + '<circle cx="90" cy="90" r="78" fill="none" stroke="'+toneColor+'" stroke-width="16" stroke-linecap="round" stroke-dasharray="'+circ+'" stroke-dashoffset="'+off+'"/>'
+    + '</svg><div class="gv"><span class="pct" style="color:'+toneColor+'">'+pct+'</span><span class="st" style="color:'+toneDark+';background:'+toneBg+'">'+esc(g(d,'verdictLabel','—'))+'</span></div></div>'
+    + '<div class="vsum">'+esc(g(d,'summary',''))+'</div>';
+  const topIssue = g(d,'topIssue','');
+  if(topIssue) h += '<div class="vtop" style="background:'+toneBg+';color:'+toneDark+'"><span>🎯</span><div><b>가장 먼저 바로잡을 것:</b> '+esc(topIssue)+'</div></div>';
+  h += '</div>';
+
+  h += '<div class="sec-title">① 내부 정합성 교차 대조 <span class="badge-new">진단에 없는 점검</span></div>'
+    + '<div class="card"><div class="consist-head"><div class="ch-t">🔗 문서 곳곳의 숫자·주장을 나란히 대조</div><div class="ch-d">심사위원은 요약·본문·재무표를 나란히 놓고 비교합니다. 어긋나면 신뢰가 깨집니다.</div></div>';
+  const idn = g(d,'identity',null);
+  if(idn){
+    const ok = g(d,'identity.status','')==='ok';
+    h += '<div class="consist-sub">아이템 정체성</div><div class="cmatch"><span class="cm-ico '+(ok?'ok':'no')+'">'+(ok?'✓':'!')+'</span><div class="cm-body"><div class="cm-title">아이템 ↔ 사업 내용 '+(ok?'일치':'불일치')+'</div><div class="cm-ok-note">'+esc(g(d,'identity.note',''))+'</div></div></div>';
+  }
+  const nums = g(d,'numbers',[]);
+  if(Array.isArray(nums) && nums.length){
+    h += '<div class="consist-sub">수치 교차 대조</div>';
+    nums.forEach(function(n){
+      const ok = g(n,'status','')==='ok';
+      if(ok){
+        h += '<div class="cmatch"><span class="cm-ico ok">✓</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 일치</div><div class="cm-ok-note">문서 전체에서 일관됩니다.</div></div></div>';
+      }else{
+        h += '<div class="cmatch"><span class="cm-ico no">!</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 어긋남</div>'
+          + '<div class="clash"><div class="clash-side"><div class="cs-where">'+esc(g(n,'left.where','A'))+'</div><div class="cs-val">'+esc(g(n,'left.val','—'))+'</div></div><div class="clash-mid">≠</div><div class="clash-side right"><div class="cs-where">'+esc(g(n,'right.where','B'))+'</div><div class="cs-val">'+esc(g(n,'right.val','—'))+'</div></div></div>'
+          + (g(n,'gap','')?'<span class="clash-gap">'+esc(g(n,'gap',''))+'</span>':'')+'</div></div>';
+      }
+    });
+  }
+  const claims = g(d,'claims',[]);
+  if(Array.isArray(claims) && claims.length){
+    h += '<div class="consist-sub">주장 간 모순</div>';
+    claims.forEach(function(c){
+      const ok = g(c,'status','')==='ok';
+      h += '<div class="cmatch"><span class="cm-ico '+(ok?'ok':'no')+'">'+(ok?'✓':'!')+'</span><div class="cm-body"><div class="cm-title">'+esc(g(c,'label','주장'))+' '+(ok?'일관':'모순')+'</div><div class="cm-ok-note">'+esc(g(c,'note',''))+'</div></div></div>';
+    });
+  }
+  const kw = g(d,'keyword',null);
+  if(kw){
+    const st = g(d,'keyword.status','unknown'); const ok = st==='ok';
+    h += '<div class="consist-sub">공고 키워드 반영</div><div class="cmatch"><span class="cm-ico '+(ok?'ok':(st==='unknown'?'unknown':'no'))+'">'+(ok?'✓':(st==='unknown'?'?':'!'))+'</span><div class="cm-body"><div class="cm-title">'+(ok?'공고 키워드가 본문에서 뒷받침됨':(st==='unknown'?'공고 미제공 — 판정 보류':'아이템 키워드의 본문 근거 부족'))+'</div><div class="cm-ok-note">'+esc(g(d,'keyword.note',''))+'</div></div></div>';
+  }
+  h += '<div class="consist-foot">⚠️ <b>수치 불일치는 1차 탈락의 숨은 원인입니다.</b> 제출 전 요약·본문·재무표·조직도의 숫자를 하나로 맞추세요.</div></div>';
+
+  const fg = g(d,'formGate',[]);
+  if(Array.isArray(fg) && fg.length){
+    h += '<div class="sec-title">② 형식 게이트 — 점수 매기기 전에 걸러지는 것 <span class="badge-new">진단에 없는 점검</span></div><div class="card">';
+    let anyNo=false;
+    fg.forEach(function(gt){
+      const st = g(gt,'status','unknown'); const ok=st==='ok'; if(st==='no') anyNo=true;
+      const cls = ok?'ok':(st==='unknown'?'unknown':'no');
+      const tag = ok?'통과':(st==='unknown'?'확인 보류':'확인 필요');
+      const ic = ok?'✓':(st==='unknown'?'?':'!');
+      h += '<div class="gate-row"><span class="gate-ico '+cls+'">'+ic+'</span><div class="gate-body"><div class="gt">'+esc(g(gt,'item',''))+'</div><div class="gd">'+esc(g(gt,'detail',''))+'</div></div><span class="gate-tag '+cls+'">'+tag+'</span></div>';
+    });
+    if(anyNo) h += '<div class="gate-warn">⚠️ 임의 양식·분량 초과·필수 누락은 <b>점수 평가 대상에서 제외</b>됩니다. 내용이 좋아도 여기서 걸리면 탈락입니다.</div>';
+    h += '</div>';
+  }
+
+  const fo = g(d,'fixOrder',[]);
+  if(Array.isArray(fo) && fo.length){
+    h += '<div class="sec-title">③ 바로잡을 순서</div><div class="card" style="padding:8px 4px">';
+    fo.forEach(function(f,i){
+      h += '<div class="gate-row"><span class="gate-ico ok" style="background:#e8f2ff;color:#1b64da">'+(i+1)+'</span><div class="gate-body"><div class="gt" style="font-weight:600;font-size:13px">'+esc(f)+'</div></div></div>';
+    });
+    h += '</div>';
+  }
+
+  h += '<div class="disclaimer">⚠️ <b>정합성 점수·판정은 AI 추정이며 실제 심사 결과를 보장하지 않습니다.</b> AI가 문서에서 수치를 놓치거나 오판할 수 있으니, 표시된 불일치는 반드시 원본에서 직접 확인하세요. 사실과 다른 내용 기재는 선정취소·환수·제재 사유가 됩니다.</div>';
+  h += '<div class="actions"><button class="act-btn pdf" onclick="window.print()">📄 PDF로 저장·인쇄</button><button class="act-btn retry" onclick="location.reload()">↻ 다시 심사</button></div>';
+  document.getElementById('result').innerHTML = h;
+}
+</script>
+</body>
+</html>
