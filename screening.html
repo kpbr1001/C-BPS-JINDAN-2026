@@ -61,7 +61,10 @@
   .consist-head .ch-t{font-size:14px;font-weight:800;color:var(--gray-900);margin-bottom:3px;}
   .consist-head .ch-d{font-size:12px;color:var(--gray-600);line-height:1.5;}
   .consist-sub{padding:14px 20px 6px;font-size:11.5px;font-weight:800;color:var(--gray-500);}
-  .cmatch{padding:12px 20px;border-bottom:1px solid var(--gray-100);display:flex;gap:12px;align-items:flex-start;}
+  .cmatch{padding:12px 20px 12px 16px;border-bottom:1px solid var(--gray-100);display:flex;gap:12px;align-items:flex-start;border-left:4px solid transparent;}
+  .cmatch.sig-ok{border-left-color:var(--pass);background:linear-gradient(90deg,var(--pass-bg),transparent 60%);}
+  .cmatch.sig-no{border-left-color:var(--fail);background:linear-gradient(90deg,var(--fail-bg),transparent 60%);}
+  .cmatch.sig-unclear{border-left-color:var(--gray-300);background:linear-gradient(90deg,var(--gray-50),transparent 60%);}
   .cmatch:last-child{border-bottom:none;}
   .cm-ico{width:24px;height:24px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-top:1px;}
   .cm-ico.ok{background:var(--pass-bg);color:var(--pass-dark);} .cm-ico.no{background:var(--fail-bg);color:var(--fail-dark);} .cm-ico.unknown{background:var(--gray-100);color:var(--gray-500);}
@@ -322,7 +325,7 @@ function renderResult(d){
   const idn = g(d,'identity',null);
   if(idn){
     const ok = g(d,'identity.status','')==='ok';
-    h += '<div class="consist-sub">아이템 정체성</div><div class="cmatch"><span class="cm-ico '+(ok?'ok':'no')+'">'+(ok?'✓':'!')+'</span><div class="cm-body"><div class="cm-title">아이템 ↔ 사업 내용 '+(ok?'일치':'불일치')+'</div><div class="cm-ok-note">'+esc(g(d,'identity.note',''))+'</div></div></div>';
+    h += '<div class="consist-sub">아이템 정체성</div><div class="cmatch '+(ok?'sig-ok':'sig-no')+'"><span class="cm-ico '+(ok?'ok':'no')+'">'+(ok?'✓':'!')+'</span><div class="cm-body"><div class="cm-title">아이템 ↔ 사업 내용 '+(ok?'일치':'불일치')+'</div><div class="cm-ok-note">'+esc(g(d,'identity.note',''))+'</div></div></div>';
   }
   const nums = g(d,'numbers',[]);
   if(Array.isArray(nums) && nums.length){
@@ -330,13 +333,13 @@ function renderResult(d){
     nums.forEach(function(n){
       const st = g(n,'status','no');
       if(st==='ok'){
-        h += '<div class="cmatch"><span class="cm-ico ok">✓</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 일치</div><div class="cm-ok-note">문서 전체에서 일관됩니다.</div></div></div>';
+        h += '<div class="cmatch sig-ok"><span class="cm-ico ok">✓</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 일치</div><div class="cm-ok-note">문서 전체에서 일관됩니다.</div></div></div>';
       }else if(st==='unclear'){
-        h += '<div class="cmatch"><span class="cm-ico unknown">?</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' — 대조 불가 (본문 미기재)</div>'
+        h += '<div class="cmatch sig-unclear"><span class="cm-ico unknown">?</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' — 대조 불가 (본문 미기재)</div>'
           + '<div class="clash" style="border-color:var(--gray-300)"><div class="clash-side"><div class="cs-where">'+esc(g(n,'left.where','기업정보'))+'</div><div class="cs-val">'+esc(g(n,'left.val','—'))+'</div></div><div class="clash-mid" style="color:var(--gray-400)">?</div><div class="clash-side" style="background:var(--gray-50)"><div class="cs-where">'+esc(g(n,'right.where','본문'))+'</div><div class="cs-val" style="color:var(--gray-500)">'+esc(g(n,'right.val','언급 없음'))+'</div></div></div>'
           + (g(n,'gap','')?'<span class="clash-gap" style="background:var(--gray-100);color:var(--gray-600)">'+esc(g(n,'gap',''))+'</span>':'')+'</div></div>';
       }else{
-        h += '<div class="cmatch"><span class="cm-ico no">!</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 어긋남</div>'
+        h += '<div class="cmatch sig-no"><span class="cm-ico no">!</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 어긋남</div>'
           + '<div class="clash"><div class="clash-side"><div class="cs-where">'+esc(g(n,'left.where','A'))+'</div><div class="cs-val">'+esc(g(n,'left.val','—'))+'</div></div><div class="clash-mid">≠</div><div class="clash-side right"><div class="cs-where">'+esc(g(n,'right.where','B'))+'</div><div class="cs-val">'+esc(g(n,'right.val','—'))+'</div></div></div>'
           + (g(n,'gap','')?'<span class="clash-gap">'+esc(g(n,'gap',''))+'</span>':'')+'</div></div>';
       }
@@ -347,13 +350,13 @@ function renderResult(d){
     h += '<div class="consist-sub">주장 간 모순</div>';
     claims.forEach(function(c){
       const ok = g(c,'status','')==='ok';
-      h += '<div class="cmatch"><span class="cm-ico '+(ok?'ok':'no')+'">'+(ok?'✓':'!')+'</span><div class="cm-body"><div class="cm-title">'+esc(g(c,'label','주장'))+' '+(ok?'일관':'모순')+'</div><div class="cm-ok-note">'+esc(g(c,'note',''))+'</div></div></div>';
+      h += '<div class="cmatch '+(ok?'sig-ok':'sig-no')+'"><span class="cm-ico '+(ok?'ok':'no')+'">'+(ok?'✓':'!')+'</span><div class="cm-body"><div class="cm-title">'+esc(g(c,'label','주장'))+' '+(ok?'일관':'모순')+'</div><div class="cm-ok-note">'+esc(g(c,'note',''))+'</div></div></div>';
     });
   }
   const kw = g(d,'keyword',null);
   if(kw){
     const st = g(d,'keyword.status','unknown'); const ok = st==='ok';
-    h += '<div class="consist-sub">공고 키워드 반영</div><div class="cmatch"><span class="cm-ico '+(ok?'ok':(st==='unknown'?'unknown':'no'))+'">'+(ok?'✓':(st==='unknown'?'?':'!'))+'</span><div class="cm-body"><div class="cm-title">'+(ok?'공고 키워드가 본문에서 뒷받침됨':(st==='unknown'?'공고 미제공 — 판정 보류':'아이템 키워드의 본문 근거 부족'))+'</div><div class="cm-ok-note">'+esc(g(d,'keyword.note',''))+'</div></div></div>';
+    h += '<div class="consist-sub">공고 키워드 반영</div><div class="cmatch '+(ok?'sig-ok':(st==='unknown'?'sig-unclear':'sig-no'))+'"><span class="cm-ico '+(ok?'ok':(st==='unknown'?'unknown':'no'))+'">'+(ok?'✓':(st==='unknown'?'?':'!'))+'</span><div class="cm-body"><div class="cm-title">'+(ok?'공고 키워드가 본문에서 뒷받침됨':(st==='unknown'?'공고 미제공 — 판정 보류':'아이템 키워드의 본문 근거 부족'))+'</div><div class="cm-ok-note">'+esc(g(d,'keyword.note',''))+'</div></div></div>';
   }
   h += '<div class="consist-foot">⚠️ <b>수치 불일치는 1차 탈락의 숨은 원인입니다.</b> 제출 전 요약·본문·재무표·조직도의 숫자를 하나로 맞추세요.</div></div>';
 
