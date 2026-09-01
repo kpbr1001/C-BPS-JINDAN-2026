@@ -349,6 +349,38 @@ function renderResult(d){
   h += '<div class="actions"><button class="act-btn pdf" onclick="window.print()">📄 PDF로 저장·인쇄</button><button class="act-btn retry" onclick="location.reload()">↻ 다시 심사</button></div>';
   document.getElementById('result').innerHTML = h;
 }
+
+// ===== A진단에서 넘어온 데이터로 자동 실행 =====
+function tryAutoRun(){
+  var raw = null;
+  try{ raw = localStorage.getItem('beconic_screening_input'); }catch(_){}
+  if(!raw) return;               // 직접 접속 → 입력화면 그대로
+  var payload = null;
+  try{ payload = JSON.parse(raw); }catch(_){ return; }
+  if(!payload || !payload.plan || String(payload.plan).trim().length < 50) return;
+
+  // 입력칸 채우기(사용자가 원하면 수정 후 재실행 가능)
+  document.getElementById('planText').value = payload.plan || '';
+  document.getElementById('noticeText').value = payload.notice || '';
+  document.getElementById('cMuchul').value = payload.muchul || '';
+  document.getElementById('cGoyong').value = payload.goyong || '';
+  document.getElementById('cSuchul').value = payload.suchul || '';
+
+  // 한 번 쓰면 지움(뒤로가기·새로고침 시 중복 실행 방지)
+  try{ localStorage.removeItem('beconic_screening_input'); }catch(_){}
+
+  // A에서 넘어왔음을 알리는 배너 + 자동 실행
+  var note = document.getElementById('roleNote');
+  if(note){ note.innerHTML = '<span>🔗</span><div><b>진단에서 넘어온 계획서로 자동 심사합니다.</b> 재입력이 필요 없습니다. 내용을 바꾸고 싶으면 아래에서 수정 후 다시 실행하세요.</div>'; }
+  runScreening();
+}
+// 페이지 로드 시 시도
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', tryAutoRun);
+}else{
+  tryAutoRun();
+}
+
 </script>
 </body>
 </html>
