@@ -162,7 +162,7 @@ const g = (obj,path,def)=>{ try{ const v=path.split('.').reduce((o,k)=>(o==null?
 
 function buildPrompt(plan, notice, company){
   return '당신은 정부지원사업 서면평가를 수백 건 심사한 평가위원입니다. 아래 사업계획서의 "내부 정합성"만 집중 검토하세요. 문서 곳곳의 숫자·주장이 서로 어긋나는지를 교차 대조하는 것이 임무입니다. (점수 매기기·문장 첨삭은 다른 도구가 담당하니 하지 마세요.)\n\n'
-  + '# 절대 원칙\n- 계획서에 실재하는 내용·수치만 근거로 사용하세요. 없는 것을 지어내지 마세요.\n- 서로 다른 위치(요약/본문/재무표/조직도/기업정보)의 같은 항목 수치를 대조해 어긋남을 찾으세요.\n- 어긋남이 없으면 정직하게 "일치"로 표시하세요. 억지로 문제를 만들지 마세요.\n\n'
+  + '# 절대 원칙\n- 계획서에 실재하는 내용·수치만 근거로 사용하세요. 없는 것을 지어내지 마세요.\n- 서로 다른 위치(요약/본문/재무표/조직도/기업정보)의 같은 항목 수치를 대조해 어긋남을 찾으세요.\n- 어긋남이 없으면 정직하게 "일치"로 표시하세요. 억지로 문제를 만들지 마세요.\n- 오직 정합성(수치·주장이 서로 맞는가)만 판단하세요. 사업성·규모 적정성·역량 평가는 다른 도구의 몫이니 절대 언급하지 마세요.\n\n'
   + '# 입력\n## 사업계획서 본문\n' + plan + '\n\n## 지원 공고 요약\n' + (notice || '(미제공 — 양식·키워드 정합성은 근거 부족으로 unknown 처리)') + '\n\n'
   + '## 기업정보(사용자 입력값 — 계획서 본문 수치와 반드시 대조)\n- 매출: ' + (company.muchul||'미입력') + '\n- 고용: ' + (company.goyong||'미입력') + '\n- 수출: ' + (company.suchul||'미입력') + '\n\n'
   + '# 출력 형식 (반드시 아래 JSON만 출력. 마크다운·코드펜스·설명 금지)\n'
@@ -172,13 +172,14 @@ function buildPrompt(plan, notice, company){
   + '  "summary": "<2~3문장. 정합성 상태와 심사 시 위험>",\n'
   + '  "topIssue": "<가장 위험한 불일치 1가지. 없으면 빈 문자열>",\n'
   + '  "identity": {"status":"<ok|no>","note":"<요약 아이템과 본문 사업내용이 같은 방향인가>"},\n'
-  + '  "numbers": [ {"label":"<무엇의 수치>","status":"<ok|no>","left":{"where":"<위치>","val":"<값>"},"right":{"where":"<위치>","val":"<값>"},"gap":"<차이와 위험. ok면 빈 문자열>"} ],\n'
-  + '  "claims": [ {"label":"<주장 간 모순>","status":"<ok|no>","note":"<어디와 어디가 모순인가>"} ],\n'
+  + '  "numbers": [ {"label":"<무엇의 수치>","status":"<ok|no|unclear>","left":{"where":"<위치>","val":"<값>"},"right":{"where":"<위치>","val":"<값>"},"gap":"<설명. ok면 빈 문자열>"} ],\n'
+  + '  "claims": [ {"label":"<주장 간 모순>","status":"<ok|no>","note":"<어디와 어디가 모순인가. 모순 없으면 status:ok>"} ],\n'
   + '  "formGate": [ {"item":"지정 양식 사용","status":"<ok|no|unknown>","detail":"<근거. 공고 미제공 시 unknown>"}, {"item":"분량 준수","status":"<ok|no|unknown>","detail":"<근거>"}, {"item":"필수 첨부·필수 항목","status":"<ok|no|unknown>","detail":"<근거>"} ],\n'
   + '  "keyword": {"status":"<ok|no|unknown>","note":"<공고 키워드를 아이템으로 내세웠는데 본문 근거가 있는가. 공고 없으면 unknown>"},\n'
   + '  "fixOrder": ["<바로잡을 순서. 어긋난 것부터. 각 항목 한 줄>"]\n'
   + '}\n\n'
-  + '# 주의\n- numbers·claims는 실제 대조 가능한 것만. 어긋남 없으면 status:"ok".\n- 점수(scoreTable)·목적적합성 점수·문장 첨삭·수정예시는 출력 금지. 정합성만.\n- fixOrder는 효과·긴급도 순 3~5개.';
+  + '# status 판정 기준 (매우 중요)\n- ok: 여러 위치의 수치가 실제로 일치. 또는 모순이 전혀 없음.\n- no: 여러 위치의 수치가 실제로 서로 다름(예: 요약 10억 vs 재무표 7억). "진짜 어긋남"일 때만.\n- unclear: 한쪽에만 있고 다른 쪽엔 없어 대조 불가(예: 기업정보엔 매출 있는데 본문엔 미기재). "어긋남"이 아니라 "확인 불가"임. 모순이 없으면 절대 no를 쓰지 말고 unclear 또는 ok를 쓸 것.\n'
+  + '# 주의\n- numbers·claims는 실제 대조 가능한 것만.\n- 점수(scoreTable)·목적적합성 점수·문장 첨삭·수정예시는 출력 금지. 정합성만.\n- fixOrder는 효과·긴급도 순 3~5개.';
 }
 
 function parseLenientJSON(text){
@@ -296,9 +297,13 @@ function renderResult(d){
   if(Array.isArray(nums) && nums.length){
     h += '<div class="consist-sub">수치 교차 대조</div>';
     nums.forEach(function(n){
-      const ok = g(n,'status','')==='ok';
-      if(ok){
+      const st = g(n,'status','no');
+      if(st==='ok'){
         h += '<div class="cmatch"><span class="cm-ico ok">✓</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 일치</div><div class="cm-ok-note">문서 전체에서 일관됩니다.</div></div></div>';
+      }else if(st==='unclear'){
+        h += '<div class="cmatch"><span class="cm-ico unknown">?</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' — 대조 불가 (본문 미기재)</div>'
+          + '<div class="clash" style="border-color:var(--gray-300)"><div class="clash-side"><div class="cs-where">'+esc(g(n,'left.where','기업정보'))+'</div><div class="cs-val">'+esc(g(n,'left.val','—'))+'</div></div><div class="clash-mid" style="color:var(--gray-400)">?</div><div class="clash-side" style="background:var(--gray-50)"><div class="cs-where">'+esc(g(n,'right.where','본문'))+'</div><div class="cs-val" style="color:var(--gray-500)">'+esc(g(n,'right.val','언급 없음'))+'</div></div></div>'
+          + (g(n,'gap','')?'<span class="clash-gap" style="background:var(--gray-100);color:var(--gray-600)">'+esc(g(n,'gap',''))+'</span>':'')+'</div></div>';
       }else{
         h += '<div class="cmatch"><span class="cm-ico no">!</span><div class="cm-body"><div class="cm-title">'+esc(g(n,'label','수치'))+' 어긋남</div>'
           + '<div class="clash"><div class="clash-side"><div class="cs-where">'+esc(g(n,'left.where','A'))+'</div><div class="cs-val">'+esc(g(n,'left.val','—'))+'</div></div><div class="clash-mid">≠</div><div class="clash-side right"><div class="cs-where">'+esc(g(n,'right.where','B'))+'</div><div class="cs-val">'+esc(g(n,'right.val','—'))+'</div></div></div>'
