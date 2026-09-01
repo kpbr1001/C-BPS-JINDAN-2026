@@ -151,7 +151,8 @@
   <div class="result" id="result"></div>
   <div class="foot">
     <b>그로스벤처스(주) · Beconic</b> · 중기부 인증 중소기업상담회사 제2025-684호<br>
-    문의 070-4103-4177 · 참고용 자가진단 도구 · 최종 판단과 책임은 제출자에게 있습니다
+    문의 070-4103-4177 · 참고용 자가진단 도구 · 최종 판단과 책임은 제출자에게 있습니다<br>
+    <span style="font-size:10px;color:#94a3b8;">정합성 심사 v1.2 · 20260901</span>
   </div>
 </div>
 <script>
@@ -178,7 +179,7 @@ function buildPrompt(plan, notice, company){
   + '  "keyword": {"status":"<ok|no|unknown>","note":"<공고 키워드를 아이템으로 내세웠는데 본문 근거가 있는가. 공고 없으면 unknown>"},\n'
   + '  "fixOrder": ["<바로잡을 순서. 어긋난 것부터. 각 항목 한 줄>"]\n'
   + '}\n\n'
-  + '# status 판정 기준 (매우 중요)\n- ok: 여러 위치의 수치가 실제로 일치. 또는 모순이 전혀 없음.\n- no: 여러 위치의 수치가 실제로 서로 다름(예: 요약 10억 vs 재무표 7억). "진짜 어긋남"일 때만.\n- unclear: 한쪽에만 있고 다른 쪽엔 없어 대조 불가(예: 기업정보엔 매출 있는데 본문엔 미기재). "어긋남"이 아니라 "확인 불가"임. 모순이 없으면 절대 no를 쓰지 말고 unclear 또는 ok를 쓸 것.\n- 양쪽 다 0이거나 양쪽 다 없음(예: 수출 0 & 본문에 수출 언급 없음)이면 모순이 아니므로 ok로 판정.\n'
+  + '# status 판정 기준 (매우 중요)\n- ok: 여러 위치의 수치가 실제로 일치. 또는 모순이 전혀 없음.\n- no: 여러 위치의 수치가 실제로 서로 다름(예: 요약 10억 vs 재무표 7억). "진짜 어긋남"일 때만.\n- unclear: 한쪽에만 있고 다른 쪽엔 없어 대조 불가(예: 기업정보엔 매출 있는데 본문엔 미기재). "어긋남"이 아니라 "확인 불가"임. 모순이 없으면 절대 no를 쓰지 말고 unclear 또는 ok를 쓸 것.\n- 양쪽 다 0이거나 양쪽 다 없음(예: 수출 0 & 본문에 수출 언급 없음)이면 모순이 아니므로 ok로 판정.\n- 단위가 다를 뿐 같은 값이면(예: 16억원 = 1,600백만원 = 1,600,000천원) 일치이므로 ok로 판정. 반드시 단위를 환산해서 비교할 것.\n'
   + '# 주의\n- numbers·claims는 실제 대조 가능한 것만.\n- 점수(scoreTable)·목적적합성 점수·문장 첨삭·수정예시는 출력 금지. 정합성만.\n- fixOrder는 효과·긴급도 순 3~5개.';
 }
 
@@ -394,7 +395,7 @@ function tryAutoRun(){
   try{ payload = JSON.parse(raw); }catch(_){ return; }
   if(!payload || !payload.plan || String(payload.plan).trim().length < 50) return;
 
-  // 입력칸 채우기(사용자가 원하면 수정 후 재실행 가능)
+  // 입력칸 채우기(숨겨두되, 수정 원하면 펼쳐서 재실행 가능)
   document.getElementById('planText').value = payload.plan || '';
   document.getElementById('noticeText').value = payload.notice || '';
   document.getElementById('cMuchul').value = payload.muchul || '';
@@ -404,9 +405,21 @@ function tryAutoRun(){
   // 한 번 쓰면 지움(뒤로가기·새로고침 시 중복 실행 방지)
   try{ localStorage.removeItem('beconic_screening_input'); }catch(_){}
 
-  // A에서 넘어왔음을 알리는 배너 + 자동 실행
+  // 입력 카드를 접어서 숨김 — '다시 입력' 오해 방지
+  var card = document.getElementById('inputCard');
+  if(card){ card.style.display = 'none'; }
+  // 접힌 상태 안내 + 펼치기 버튼 삽입
   var note = document.getElementById('roleNote');
-  if(note){ note.innerHTML = '<span>🔗</span><div><b>진단에서 넘어온 계획서로 자동 심사합니다.</b> 재입력이 필요 없습니다. 내용을 바꾸고 싶으면 아래에서 수정 후 다시 실행하세요.</div>'; }
+  if(note){
+    note.innerHTML = '<span>🔗</span><div><b>진단에서 넘어온 계획서로 자동 심사합니다.</b> 재입력이 필요 없습니다. <a href="#" id="editToggle" style="color:#0f766e;font-weight:700;text-decoration:underline;">계획서 내용 수정하기</a></div>';
+    setTimeout(function(){
+      var t = document.getElementById('editToggle');
+      if(t){ t.onclick = function(ev){ ev.preventDefault();
+        var c = document.getElementById('inputCard');
+        if(c){ c.style.display = (c.style.display==='none'?'block':'none'); }
+      }; }
+    }, 50);
+  }
   runScreening();
 }
 // 페이지 로드 시 시도
