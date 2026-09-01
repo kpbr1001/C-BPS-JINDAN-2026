@@ -1424,7 +1424,7 @@ function auditStaticTitles(){
 //       이 버전이 담고 있어야 할 핵심 수정(soft매칭·roadmap매칭·화이트리스트)이
 //       실제 코드에 있는지 검사한다. 없으면 footer에 "옛 코드 실행 중" 경고를 띄운다.
 (function(){
-  var SIG='v8.1';
+  var SIG='v8.2';
   try{ console.log('%c[Beconic BUILD] '+SIG+' · title-config · loaded '+new Date().toLocaleTimeString(),'color:#16a34a;font-weight:bold'); }catch(_){}
   document.addEventListener('DOMContentLoaded',function(){
     // 정적 타이틀을 APP_CONFIG 기준으로 일괄 동기화 후 자가감사
@@ -1442,7 +1442,7 @@ function auditStaticTitles(){
       var el = document.getElementById('build-loaded');
       if(el){
         if(missing.length===0){
-          el.textContent = '· '+SIG+' ✓ '+new Date().toISOString().slice(11,19);
+          el.textContent = '· '+SIG+' ✓ 업데이트 2026-09-01 '+new Date().toISOString().slice(11,19);
           el.style.color = '#16a34a';
         } else {
           el.textContent = '· ⚠ 옛 코드 실행 중(누락: '+missing.join(',')+') — 캐시 강력새로고침(Ctrl+Shift+R) 또는 재배포 필요';
