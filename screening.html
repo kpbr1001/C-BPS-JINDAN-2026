@@ -169,7 +169,7 @@ function buildPrompt(plan, notice, company){
   + '{\n'
   + '  "consistencyScore": <0~100 정수. 아래 기준으로 산정>,\n'
   + '  "verdictLabel": "<정합성 양호|부분 불일치|불일치 다수> 중 하나",\n'
-  + '  "summary": "<2문장 이내로 간결하게. 가장 치명적인 문제 1개를 앞세울 것>",\n'
+  + '  "summary": "<반드시 2문장 이내, 총 100자 이내. 가장 치명적인 문제 1개만>",\n'
   + '  "topIssue": "<가장 위험한 불일치 1가지. 없으면 빈 문자열>",\n'
   + '  "identity": {"status":"<ok|no>","note":"<요약 아이템과 본문 사업내용이 같은 방향인가>"},\n'
   + '  "numbers": [ {"label":"<무엇의 수치>","status":"<ok|no|unclear>","left":{"where":"<위치>","val":"<값>"},"right":{"where":"<위치>","val":"<값>"},"gap":"<설명. ok면 빈 문자열>"} ],\n'
@@ -186,15 +186,45 @@ function parseLenientJSON(text){
   if(!text) return null;
   let t = String(text).trim();
   t = t.replace(/^```(json)?/i,'').replace(/```$/,'').trim();
-  const s = t.indexOf('{'), e = t.lastIndexOf('}');
-  if(s>=0 && e>s) t = t.slice(s, e+1);
-  try{ return JSON.parse(t); }catch(_){}
-  try{ return JSON.parse(t.replace(/,\s*([}\]])/g,'$1')); }catch(_){}
+  const s = t.indexOf('{');
+  if(s>=0) t = t.slice(s);
+  const e = t.lastIndexOf('}');
+  let full = (e>0) ? t.slice(0, e+1) : t;
+  // 1차: 그대로
+  try{ return JSON.parse(full); }catch(_){}
+  // 2차: 트레일링 콤마 제거
+  try{ return JSON.parse(full.replace(/,\s*([}\]])/g,'$1')); }catch(_){}
+  // 3차: 잘린 JSON 복구 — 열린 괄호/따옴표를 닫아서 파싱 시도
+  try{
+    let r = t;
+    // 마지막 완전한 값 뒤에서 자르기: 마지막 쉼표나 닫는 괄호까지만
+    let cut = Math.max(r.lastIndexOf('"},'), r.lastIndexOf('"],'), r.lastIndexOf('},'), r.lastIndexOf('],'));
+    if(cut>0){ r = r.slice(0, cut+1); }
+    // 열린 [ 와 { 개수만큼 닫기
+    let opens = (r.match(/[\[{]/g)||[]).length;
+    let closes = (r.match(/[\]}]/g)||[]).length;
+    // 열린 따옴표 홀수면 하나 닫기
+    let quotes = (r.match(/"/g)||[]).length;
+    if(quotes % 2 === 1) r += '"';
+    // 스택 기반으로 정확히 닫기
+    let stack=[]; let inStr=false, esc2=false;
+    for(let i=0;i<r.length;i++){ let c=r[i];
+      if(esc2){esc2=false;continue;}
+      if(c==='\\'){esc2=true;continue;}
+      if(c==='"'){inStr=!inStr;continue;}
+      if(inStr)continue;
+      if(c==='{'||c==='[')stack.push(c);
+      else if(c==='}'||c===']')stack.pop();
+    }
+    for(let i=stack.length-1;i>=0;i--){ r += (stack[i]==='{'?'}':']'); }
+    r = r.replace(/,\s*([}\]])/g,'$1');
+    return JSON.parse(r);
+  }catch(_){}
   return null;
 }
 
 async function callAI(prompt, onProgress){
-  const body = { model: MODEL, max_tokens: 6000, messages:[{role:'user',content:prompt}] };
+  const body = { model: MODEL, max_tokens: 8000, messages:[{role:'user',content:prompt}] };
   const res = await fetch(API_PROXY_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   if(!res.ok){
     const raw = await res.text();
