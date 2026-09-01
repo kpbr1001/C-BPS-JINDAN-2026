@@ -19,6 +19,13 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:var(--font);background:#eef1f5;color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;}
   .wrap{max-width:800px;margin:0 auto;padding:24px 16px 90px;}
+  
+  /* 상단 내비바 */
+  .topnav{position:sticky;top:0;z-index:50;background:rgba(238,241,245,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--gray-200);padding:10px 16px;margin:-24px -16px 18px;}
+  .topnav-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .nav-home{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--gray-700);text-decoration:none;padding:7px 13px;border-radius:9px;border:1px solid var(--gray-200);background:#fff;transition:all .15s;}
+  .nav-home:hover{background:var(--gray-50);border-color:var(--gray-300);}
+  .nav-title{font-size:12px;font-weight:800;color:var(--gray-500);}
   .kicker{text-align:center;margin-bottom:14px;}
   .kicker .role{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--gray-700);background:#fff;border:1px solid var(--gray-200);padding:6px 14px;border-radius:999px;}
   h1.title{text-align:center;font-size:22px;font-weight:900;letter-spacing:-.03em;margin-bottom:6px;line-height:1.3;}
@@ -89,6 +96,14 @@
   .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
   .act-btn{font-size:13.5px;font-weight:800;padding:12px 22px;border-radius:11px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
   .act-btn.pdf{background:var(--gray-900);color:#fff;} .act-btn.retry{background:#fff;border:1px solid var(--gray-300);color:var(--gray-700);}
+
+  /* 문의 CTA */
+  .contact-cta{background:linear-gradient(135deg,#1e40af,#3182f6);border-radius:16px;padding:22px 24px;margin-top:18px;text-align:center;color:#fff;}
+  .contact-cta .cc-title{font-size:16px;font-weight:800;margin-bottom:6px;}
+  .contact-cta .cc-desc{font-size:12.5px;opacity:.92;line-height:1.6;margin-bottom:14px;max-width:420px;margin-left:auto;margin-right:auto;}
+  .contact-cta .cc-links{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+  .contact-cta .cc-links a{color:#fff;font-size:13px;font-weight:700;text-decoration:none;}
+  .contact-cta .cc-links a:hover{text-decoration:underline;}
   .disclaimer{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:12px;padding:13px 16px;margin-top:8px;font-size:11.5px;color:var(--warn-dark);line-height:1.6;}
   .disclaimer b{color:#78350f;}
   .foot{text-align:center;padding:22px 0 0;font-size:11px;color:var(--gray-400);line-height:1.7;}
@@ -103,13 +118,19 @@
     .clash-mid{padding:6px;border-top:1px solid var(--fail-line);border-bottom:1px solid var(--fail-line);}
     .verdict{padding:22px 18px;}
     .input-card{padding:18px;}
-    .cmatch,.gate-row{padding-left:14px;padding-right:14px;}
+    .cmatch,.gate-row{padding-left:12px;padding-right:12px;}
+    .topnav{padding:8px 12px;margin-left:-12px;margin-right:-12px;}
+    .nav-home{font-size:12px;padding:6px 10px;}
+    .contact-cta .cc-links{flex-direction:column;gap:9px;}
+    .contact-cta{padding:20px 16px;}
+    .actions{flex-direction:column;}
+    .act-btn{width:100%;justify-content:center;}
   }
   @media print{
     @page{ size:A4; margin:14mm; }
     body{background:#fff;}
     .wrap{max-width:100%;padding:0;}
-    .input-card,.loading,.err-box,.actions,.role-note,.kicker{display:none !important;}
+    .input-card,.loading,.err-box,.actions,.role-note,.kicker,.topnav{display:none !important;}
     .card,.verdict{box-shadow:none;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid;}
     .verdict::before,.card{ -webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .sec-title{break-after:avoid;}
@@ -119,13 +140,19 @@
 </style>
 </head>
 <body>
+<div class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="nav-home">← AI 진단으로</a>
+    <span class="nav-title">정합성 심사</span>
+  </div>
+</div>
 <div class="wrap">
   <div class="kicker"><span class="role">🔗 사업계획서 정합성 심사 · 심사위원 시점</span></div>
   <h1 class="title">요약과 본문, 재무표의 숫자가<br>서로 맞습니까?</h1>
   <p class="subtitle">심사위원이 서류를 대조하듯, 문서 곳곳의 수치·주장이 어긋나는 곳을 찾아냅니다.</p>
-  <div class="role-note">
+  <div class="role-note" id="roleNote">
     <span>💡</span>
-    <div><b>AI 진단(점수·리스크·수정예시)과 다릅니다.</b> 진단은 문장을 항목별로 봅니다. 여기서는 진단이 볼 수 없는 <b>문서 전체의 내부 정합성</b> — 요약·본문·재무표·기업정보의 숫자가 서로 어긋나는지를 교차 대조합니다. <b>수치 불일치는 1차 탈락의 숨은 원인</b>입니다.</div>
+    <div><b>AI 진단(점수·리스크·수정예시)과 다릅니다.</b> 진단은 문장을 항목별로 봅니다. 여기서는 진단이 볼 수 없는 <b>문서 전체의 내부 정합성</b> — 요약·본문·재무표·기업정보의 숫자가 서로 어긋나는지를 교차 대조합니다. <b>수치 불일치는 1차 탈락의 숨은 원인</b>입니다. <a href="index.html" style="color:var(--blue-dark);font-weight:700;">AI 진단</a>을 먼저 받으면 계획서가 자동으로 채워집니다.</div>
   </div>
   <div class="input-card" id="inputCard">
     <div class="field">
@@ -385,7 +412,9 @@ function renderResult(d){
   }
 
   h += '<div class="disclaimer">⚠️ <b>정합성 점수·판정은 AI 추정이며 실제 심사 결과를 보장하지 않습니다.</b> AI가 문서에서 수치를 놓치거나 오판할 수 있으니, 표시된 불일치는 반드시 원본에서 직접 확인하세요. 사실과 다른 내용 기재는 선정취소·환수·제재 사유가 됩니다.</div>';
-  h += '<div class="actions"><button class="act-btn pdf" onclick="window.print()">📄 PDF로 저장·인쇄</button><button class="act-btn retry" onclick="location.reload()">↻ 다시 심사</button></div>';
+  h += '<div class="actions"><button class="act-btn pdf" onclick="window.print()">📄 PDF로 저장·인쇄</button><a class="act-btn retry" href="index.html" style="text-decoration:none;display:inline-flex;align-items:center;">↻ 새 계획서로 진단하기</a></div>';
+  // 문의 CTA
+  h += '<div class="contact-cta no-print"><div class="cc-title">이 결과로 전문가 상담받기</div><div class="cc-desc">정합성 문제를 어떻게 바로잡을지, 사업계획서 보완 방향을 전문가와 함께 정리하세요.</div><div class="cc-links"><a href="tel:070-4103-4177">📞 070-4103-4177</a><a href="mailto:start@gven.kr">✉️ start@gven.kr</a><a href="https://www.beconic.kr" target="_blank" rel="noopener">🌐 www.beconic.kr</a></div></div>';
   document.getElementById('result').innerHTML = h;
 }
 
